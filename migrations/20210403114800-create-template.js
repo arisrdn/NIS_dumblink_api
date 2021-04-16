@@ -1,24 +1,21 @@
 "use strict";
 module.exports = {
 	up: async (queryInterface, Sequelize) => {
-		await queryInterface.createTable("LinkItems", {
+		await queryInterface.createTable("Templates", {
 			id: {
 				allowNull: false,
 				autoIncrement: true,
 				primaryKey: true,
 				type: Sequelize.INTEGER,
 			},
-			title: {
+			button: {
 				type: Sequelize.STRING,
 			},
-			url: {
+			background: {
 				type: Sequelize.STRING,
 			},
-			image: {
+			imgstyle: {
 				type: Sequelize.STRING,
-			},
-			ordered: {
-				type: Sequelize.INTEGER,
 			},
 			linkId: {
 				allowNull: false,
@@ -41,6 +38,6 @@ module.exports = {
 		});
 	},
 	down: async (queryInterface, Sequelize) => {
-		await queryInterface.dropTable("LinkItems");
+		await queryInterface.dropTable("Templates");
 	},
 };

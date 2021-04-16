@@ -19,12 +19,16 @@ module.exports = (sequelize, DataTypes) => {
 				foreignKey: "linkId",
 				as: "links",
 			});
+			Link.hasOne(models.Template, {
+				foreignKey: "linkId",
+				as: "template",
+			});
 		}
 	}
 	Link.init(
 		{
 			title: DataTypes.STRING,
-			templateId: DataTypes.INTEGER,
+			// templateId: DataTypes.INTEGER,
 			description: DataTypes.STRING,
 			uniqueLink: DataTypes.STRING,
 			image: DataTypes.STRING,

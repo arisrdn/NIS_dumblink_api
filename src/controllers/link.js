@@ -1,4 +1,4 @@
-const { User, Link, LinkItem } = require("../../models/");
+const { Template, Link, LinkItem } = require("../../models/");
 const Joi = require("joi");
 const { Op } = require("sequelize");
 const URL = process.env.URL;
@@ -55,6 +55,7 @@ exports.getMyLinks = async (req, res) => {
 			attributes: {
 				exclude: ["createdAt", "updatedAt"],
 			},
+			order: [["id", "DESC"]],
 		});
 		res.send({
 			status: "success",
@@ -85,6 +86,13 @@ exports.getDetailLink = async (req, res) => {
 					as: "links",
 					attributes: {
 						exclude: ["createdAt", "updatedAt", "userId"],
+					},
+				},
+				{
+					model: Template,
+					as: "template",
+					attributes: {
+						exclude: ["createdAt", "updatedAt"],
 					},
 				},
 			],
@@ -124,9 +132,16 @@ exports.LinkView = async (req, res) => {
 						exclude: ["createdAt", "updatedAt", "userId"],
 					},
 				},
+				{
+					model: Template,
+					as: "template",
+					attributes: {
+						exclude: ["createdAt", "updatedAt"],
+					},
+				},
 			],
 			attributes: {
-				exclude: ["createdAt", "updatedAt", "restaurantId", "userId"],
+				exclude: ["createdAt", "updatedAt"],
 			},
 		});
 		if (!link) {
@@ -159,9 +174,10 @@ exports.createLink = async (req, res) => {
 		const schema = Joi.object({
 			title: Joi.string().required(),
 			description: Joi.string().required(),
-			templateId: Joi.required(),
+			// templateId: Joi.required(),
 			image: Joi.required(),
 			links: Joi.required(),
+			template: Joi.required(),
 		});
 		const { error } = schema.validate(req.body);
 
@@ -185,7 +201,7 @@ exports.createLink = async (req, res) => {
 			userId: req.userId.id,
 			title: body.title,
 			description: body.description,
-			templateId: body.templateId,
+			// templateId: body.templateId,
 			image: body.image,
 			uniqueLink,
 		});
@@ -200,6 +216,14 @@ exports.createLink = async (req, res) => {
 				image: links[i].image,
 			});
 		}
+		const { template } = body;
+
+		const templateCreate = await Template.create({
+			linkId: linkCreate.id,
+			button: template.button,
+			background: template.background,
+			imgstyle: template.imgstyle,
+		});
 
 		const link = await Link.findOne({
 			where: {
@@ -209,6 +233,13 @@ exports.createLink = async (req, res) => {
 				{
 					model: LinkItem,
 					as: "links",
+					attributes: {
+						exclude: ["createdAt", "updatedAt"],
+					},
+				},
+				{
+					model: Template,
+					as: "template",
 					attributes: {
 						exclude: ["createdAt", "updatedAt"],
 					},
@@ -239,9 +270,10 @@ exports.handleUpload = async (req, res) => {
 	try {
 		console.log("req-body", req.body);
 		console.log("req-file", req.files);
-
-		let imageName = req.files.imageFile[0].filename;
-		const { body } = req;
+		let imageName = null;
+		if (!req.body.imageFile) {
+			imageName = req.files.imageFile[0].filename;
+		}
 
 		res.send({
 			status: "success",
@@ -249,6 +281,38 @@ exports.handleUpload = async (req, res) => {
 			data: {
 				imageName,
 			},
+		});
+	} catch (err) {
+		console.log(err);
+		res.status(500).send({
+			status: "error",
+			message: "Server Error",
+		});
+	}
+};
+
+exports.deleteLink = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		const link = await Link.findOne({
+			where: {
+				id,
+			},
+		});
+
+		if (!link) {
+			return res.status(400).send({
+				status: "error",
+				message: "link doesn't exist",
+			});
+		}
+
+		await link.destroy();
+
+		res.send({
+			status: "success",
+			message: "Link Succesfully Deleted",
 		});
 	} catch (err) {
 		console.log(err);
@@ -315,7 +379,7 @@ exports.creat = async (req, res) => {
 			userId: req.userId.id,
 			title: body.title,
 			description: body.description,
-			templateId: body.templateId,
+			// templateId: body.templateId,
 			uniqueLink,
 		});
 
@@ -360,6 +424,233 @@ exports.creat = async (req, res) => {
 			data: {
 				link,
 			},
+		});
+	} catch (err) {
+		console.log(err);
+		res.status(500).send({
+			status: "error",
+			message: "Server Error",
+		});
+	}
+};
+
+exports.updateView = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		const linkUpdate = await Link.findOne({
+			where: {
+				uniqueLink: id,
+			},
+		});
+
+		if (!linkUpdate) {
+			return res.status(400).send({
+				status: "error",
+				message: "link doesn't exist",
+			});
+		}
+		linkUpdate.viewCount = linkUpdate.viewCount + 1;
+
+		await linkUpdate.save();
+		const link = await Link.findOne({
+			where: {
+				id: linkUpdate.id,
+			},
+		});
+		res.send({
+			status: "success",
+			message: "viewCount Succesfully Updated",
+			data: {
+				link,
+			},
+		});
+	} catch (err) {
+		console.log(err);
+		res.status(500).send({
+			status: "error",
+			message: "Server Error",
+		});
+	}
+};
+exports.updateLink = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		console.log("req.body", req.body);
+		const linkUpdate = await Link.findOne({
+			where: {
+				id,
+			},
+		});
+
+		if (!linkUpdate) {
+			return res.status(400).send({
+				status: "error",
+				message: "link doesn't exist",
+			});
+		}
+		linkUpdate.title = req.body.title;
+		linkUpdate.description = req.body.description;
+		if (req.body.image == undefined) {
+		} else {
+			linkUpdate.image = req.body.image;
+		}
+
+		await linkUpdate.save();
+
+		const link = await Link.findOne({
+			where: {
+				id,
+			},
+		});
+		res.send({
+			status: "success",
+			message: " Succesfully Updated",
+			data: {
+				link,
+			},
+		});
+	} catch (err) {
+		console.log(err);
+		res.status(500).send({
+			status: "error",
+			message: "Server Error",
+		});
+	}
+};
+
+exports.getLinkItem = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const linkitems = await LinkItem.findAll({
+			where: {
+				linkId: id,
+			},
+			attributes: {
+				exclude: ["createdAt", "updatedAt"],
+			},
+			order: [["ordered", "DESC"]],
+		});
+		res.send({
+			status: "success",
+			message: "LinkItem Succesfully Get",
+			data: {
+				linkitems,
+				url: URL,
+			},
+		});
+	} catch (err) {
+		console.log(err);
+		res.status(500).send({
+			status: "error",
+			message: "Server Error",
+		});
+	}
+};
+
+exports.updateItem = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		console.log("req.body", req.body);
+		const linkUpdate = await LinkItem.findOne({
+			where: {
+				id,
+			},
+		});
+
+		if (!linkUpdate) {
+			return res.status(400).send({
+				status: "error",
+				message: "link doesn't exist",
+			});
+		}
+		if (req.body.image == undefined) {
+		} else {
+			linkUpdate.image = req.body.image;
+		}
+		linkUpdate.title = req.body.title;
+		linkUpdate.description = req.body.description;
+
+		await linkUpdate.save();
+
+		const linkitem = await Link.findOne({
+			where: {
+				id,
+			},
+		});
+		res.send({
+			status: "success",
+			message: " Succesfully Updated",
+			data: {
+				linkitem,
+			},
+		});
+	} catch (err) {
+		console.log(err);
+		res.status(500).send({
+			status: "error",
+			message: "Server Error",
+		});
+	}
+};
+exports.createItem = async (req, res) => {
+	try {
+		const itemCreate = await LinkItem.create({
+			linkId: req.body.linkId,
+			title: req.body.title,
+			url: req.body.url,
+			image: req.body.image,
+		});
+		const linkitem = await LinkItem.findOne({
+			where: {
+				id: itemCreate.id,
+			},
+
+			attributes: {
+				exclude: ["createdAt", "updatedAt"],
+			},
+		});
+
+		res.send({
+			status: "success",
+			message: "LinkItem Succesfully Added",
+			data: {
+				linkitem,
+				url: URL,
+			},
+		});
+	} catch (err) {
+		console.log(err);
+		res.status(500).send({
+			status: "error",
+			message: "Server Error",
+		});
+	}
+};
+exports.deleteItem = async (req, res) => {
+	try {
+		const { id } = req.params;
+
+		const link = await LinkItem.findOne({
+			where: {
+				id,
+			},
+		});
+
+		if (!link) {
+			return res.status(400).send({
+				status: "error",
+				message: "link doesn't exist",
+			});
+		}
+
+		await link.destroy();
+
+		res.send({
+			status: "success",
+			message: "Link Succesfully Deleted",
 		});
 	} catch (err) {
 		console.log(err);

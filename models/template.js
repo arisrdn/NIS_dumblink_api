@@ -1,14 +1,15 @@
 "use strict";
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-	class LinkItem extends Model {
+	class Template extends Model {
 		/**
 		 * Helper method for defining associations.
 		 * This method is not a part of Sequelize lifecycle.
 		 * The `models/index` file will call this method automatically.
 		 */
 		static associate(models) {
-			LinkItem.belongsTo(models.Link, {
+			// define association here
+			Template.belongsTo(models.Link, {
 				as: "link",
 				foreignKey: {
 					name: "linkId",
@@ -16,18 +17,17 @@ module.exports = (sequelize, DataTypes) => {
 			});
 		}
 	}
-	LinkItem.init(
+	Template.init(
 		{
-			title: DataTypes.STRING,
-			url: DataTypes.STRING,
-			image: DataTypes.STRING,
+			button: DataTypes.STRING,
+			background: DataTypes.STRING,
+			imgstyle: DataTypes.STRING,
 			linkId: DataTypes.INTEGER,
-			ordered: DataTypes.INTEGER,
 		},
 		{
 			sequelize,
-			modelName: "LinkItem",
+			modelName: "Template",
 		}
 	);
-	return LinkItem;
+	return Template;
 };

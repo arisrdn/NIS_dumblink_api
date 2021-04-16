@@ -51,24 +51,24 @@ exports.getDetailUser = async (req, res) => {
 			where: {
 				id: req.userId.id,
 			},
-			include: [
-				{
-					model: Link,
-					as: "link",
-					attributes: {
-						exclude: ["createdAt", "updatedAt", "userId"],
-					},
-					include: [
-						{
-							model: LinkItem,
-							as: "link",
-							attributes: {
-								exclude: ["createdAt", "updatedAt"],
-							},
-						},
-					],
-				},
-			],
+			// include: [
+			// 	{
+			// 		model: Link,
+			// 		as: "link",
+			// 		attributes: {
+			// 			exclude: ["createdAt", "updatedAt", "userId"],
+			// 		},
+			// 		include: [
+			// 			{
+			// 				model: LinkItem,
+			// 				as: "link",
+			// 				attributes: {
+			// 					exclude: ["createdAt", "updatedAt"],
+			// 				},
+			// 			},
+			// 		],
+			// 	},
+			// ],
 			attributes: {
 				exclude: ["createdAt", "updatedAt", "password"],
 			},
@@ -96,7 +96,6 @@ exports.updateUser = async (req, res) => {
 
 		await console.log("isi body", req.files);
 		const schema = Joi.object({
-			// email: Joi.string().email().min(10).max(50).required(),
 			fullName: Joi.string().required(),
 		});
 
@@ -108,36 +107,39 @@ exports.updateUser = async (req, res) => {
 				message: error.details[0].message,
 			});
 
-		// body.image = req.files.imageFile[0].filename;
+		console.log("bo", body);
 
-		await User.update(body, {
-			where: {
-				id: req.userId.id,
-			},
-		});
+		await User.update(
+			{ fullName: body.fullName },
+			{
+				where: {
+					id: req.userId.id,
+				},
+			}
+		);
 
 		const user = await User.findOne({
 			where: {
 				id: req.userId.id,
 			},
-			include: [
-				{
-					model: Link,
-					as: "link",
-					attributes: {
-						exclude: ["createdAt", "updatedAt", "userId"],
-					},
-					include: [
-						{
-							model: LinkItem,
-							as: "link",
-							attributes: {
-								exclude: ["createdAt", "updatedAt"],
-							},
-						},
-					],
-				},
-			],
+			// include: [
+			// 	{
+			// 		model: Link,
+			// 		as: "link",
+			// 		attributes: {
+			// 			exclude: ["createdAt", "updatedAt", "userId"],
+			// 		},
+			// 		include: [
+			// 			{
+			// 				model: LinkItem,
+			// 				as: "link",
+			// 				attributes: {
+			// 					exclude: ["createdAt", "updatedAt"],
+			// 				},
+			// 			},
+			// 		],
+			// 	},
+			// ],
 			attributes: {
 				exclude: ["createdAt", "updatedAt", "password"],
 			},
@@ -148,7 +150,6 @@ exports.updateUser = async (req, res) => {
 			message: "User Succesfully Updated",
 			data: {
 				user,
-				url: URL,
 			},
 		});
 	} catch (err) {
@@ -162,11 +163,10 @@ exports.updateUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
 	try {
-		const { id } = req.params;
-
+		// const { id } = req.params;
 		const user = await User.findOne({
 			where: {
-				id: id,
+				id: req.userId.id,
 			},
 		});
 
